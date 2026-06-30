@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TurboLog - Garage & Maintenance</title>
+    <meta name="theme-color" content="#d97706">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="TurboLog">
+    
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        :root {
+            --bg-color: #f7f7f9;
+            --card-bg: #ffffff;
+            --text-main: #111827;
+            --text-muted: #6b7280;
+            --text-light: #9ca3af;
+            --primary-orange: #d97706;
+            --primary-orange-hover: #b45309;
+            --danger-bg: #fee2e2;
+            --danger-text: #b91c1c;
+            --warning-bg: #fef08a;
+            --warning-text: #854d0e;
+            --border-color: #e5e7eb;
+            --btn-gray-bg: #f3f4f6;
+            --btn-gray-hover: #e5e7eb;
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        /* Dark Mode */
+        body.dark-mode {
+            --bg-color: #111827;
+            --card-bg: #1f2937;
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+            --text-light: #6b7280;
+            --border-color: #374151;
+            --btn-gray-bg: #374151;
+            --btn-gray-hover: #4b5563;
+            --danger-bg: #7f1d1d;
+            --danger-text: #fca5a5;
+            --warning-bg: #713f12;
+            --warning-text: #fde047;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: var(--font-family); background-color: var(--bg-color); color: var(--text-main); line-height: 1.5; transition: background-color 0.3s, color 0.3s; }
+
+        /* Navigation */
+        nav { display: flex; justify-content: space-between; align-items: center; padding: 1rem 2rem; background-color: var(--bg-color); border-bottom: 1px solid var(--border-color); }
+        .brand { display: flex; align-items: center; gap: 0.5rem; font-size: 1.25rem; font-weight: 700; cursor: pointer; transition: color 0.2s; }
+        .brand:hover { color: var(--primary-orange); }
+        .brand i { color: var(--primary-orange); font-size: 1.5rem; }
+        .nav-actions { display: flex; gap: 1.25rem; color: var(--text-main); font-size: 1.25rem; }
+        .nav-actions i { cursor: pointer; transition: color 0.2s; }
+        .nav-actions i:hover { color: var(--primary-orange); }
+
+        /* Main Area */
+        main { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+        .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
+        .page-title h1 { font-size: 2rem; font-weight: 800; margin-bottom: 0.25rem; }
+        .page-title p { color: var(--text-muted); font-size: 1rem; }
+        
+        .header-actions { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+        
+        .btn { border: none; padding: 0.75rem 1.25rem; border-radius: 0.375rem; font-weight: 600; font-size: 0.875rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: background-color 0.2s; }
+        .btn-primary { background-color: var(--primary-orange); color: white; }
+        .btn-primary:hover { background-color: var(--primary-orange-hover); }
+        .btn-secondary { background-color: var(--btn-gray-bg); color: var(--text-main); border: 1px solid var(--border-color); }
+        .btn-secondary:hover { background-color: var(--btn-gray-hover); }
+        .btn-danger { background-color: transparent; color: var(--danger-text); border: 1px solid var(--danger-text); }
+        .btn-danger:hover { background-color: var(--danger-bg); }
+        .btn-icon-only { padding: 0.75rem; }
+
+        /* Garage Grid */
+        .garage-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem; }
+        .vehicle-card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 0.5rem; padding: 1.5rem; position: relative; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 1rem; }
+        .vehicle-card::before { content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 4px; background-color: var(--primary-orange); border-top-left-radius: 0.5rem; border-bottom-left-radius: 0.5rem; }
+        .card-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .card-header h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.25rem; }
+        .vehicle-desc { font-weight: 500; font-size: 0.875rem; margin-bottom: 0.1rem; }
+        .vehicle-specs { color: var(--text-muted); font-size: 0.75rem; margin-bottom: 0.5rem; display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+        .spec-pill { background-color: var(--bg-color); padding: 0.15rem 0.4rem; border-radius: 0.25rem; border: 1px solid var(--border-color); font-weight: 600; color: var(--text-main); }
+        .vin-display { font-family: monospace; display: flex; align-items: center; gap: 0.35rem; color: var(--text-muted); }
+        .vin-display i { cursor: pointer; font-size: 1rem; transition: color 0.2s; }
+        .vin-display i:hover { color: var(--text-main); }
+
+        .badge-overdue { background-color: var(--danger-bg); color: var(--danger-text); padding: 0.25rem 0.5rem; border-radius: 0.375rem; font-size: 0.75rem; font-weight: 600; display: flex; align-items: center; gap: 0.25rem; }
+        .badge-warning { background-color: var(--warning-bg); color: var(--warning-text); padding: 0.25rem 0.5rem; border-radius: 0.375rem; font-size: 0.75rem; font-weight: 600; display: flex; align-items: center; gap: 0.25rem; }
+        .badge-ok { background-color: rgba(34, 197, 94, 0.1); color: #166534; padding: 0.25rem 0.5rem; border-radius: 0.375rem; font-size: 0.75rem; font-weight: 600; display: flex; align-items: center; gap: 0.25rem; }
+        body.dark-mode .badge-ok { background-color: rgba(34, 197, 94, 0.2); color: #4ade80; }
+
+        .stats-row { display: flex; margin-top: 0.5rem; margin-bottom: 0.5rem; }
+        .stat-block { flex: 1; }
+        .stat-block:first-child { border-right: 1px solid var(--border-color); margin-right: 1rem; }
+        .stat-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-light); font-weight: 600; margin-bottom: 0.25rem; }
+        .stat-value { font-size: 1rem; font-weight: 500; }
+        
+        .card-actions { display: flex; gap: 0.5rem; margin-top: auto; }
+        .card-actions .btn-secondary { flex: 1; justify-content: center; }
+
+        /* Maintenance Progress Bars */
+        .progress-section { margin-top: 1rem; display: flex; flex-direction: column; gap: 1rem; }
+        .progress-item { font-size: 0.875rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color); }
+        .progress-item:last-child { border-bottom: none; }
+        .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem; font-size: 0.85rem; color: var(--text-main); font-weight: 700; }
+        
+        .progress-meta-row { display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.15rem; margin-top: 0.4rem; font-weight: 500;}
+        
+        .btn-inline-log { background: transparent; border: 1px solid var(--border-color); color: var(--text-main); border-radius: 0.25rem; padding: 0.2rem 0.6rem; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .btn-inline-log:hover { background: var(--primary-orange); color: white; border-color: var(--primary-orange); }
+
+        .progress-track { width: 100%; height: 6px; background-color: var(--border-color); border-radius: 3px; overflow: hidden; }
+        .progress-fill { height: 100%; background-color: #22c55e; border-radius: 3px; transition: width 0.3s; }
+        .progress-fill.warning { background-color: #eab308; }
+        .progress-fill.danger { background-color: #ef4444; }
+
+        /* Logs List & Glovebox */
+        .glovebox-area { width: 100%; min-height: 100px; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 0.375rem; font-family: inherit; background: transparent; color: var(--text-main); resize: vertical; line-height: 1.4; }
+        .glovebox-area:focus { outline: 2px solid var(--primary-orange); border-color: transparent; }
+
+        .log-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 2rem; }
+        .log-item { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 0.5rem; padding: 1.5rem; display: flex; justify-content: space-between; align-items: flex-start; }
+        .log-meta { display: flex; flex-wrap: wrap; gap: 1rem; color: var(--text-muted); font-size: 0.875rem; margin-top: 0.25rem; }
+        .log-notes { margin-top: 0.75rem; font-size: 0.85rem; color: var(--text-main); background: var(--bg-color); padding: 0.75rem; border-radius: 0.375rem; border: 1px solid var(--border-color); display: flex; gap: 0.5rem; align-items: flex-start; }
+        .log-notes i { color: var(--text-muted); margin-top: 0.1rem; }
+        .log-cost { font-size: 1.25rem; font-weight: 700; color: var(--text-main); white-space: nowrap; margin-left: 1rem; }
+
+        /* Modals & Forms */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 50; padding: 1rem; }
+        .modal { background-color: var(--card-bg); padding: 2rem; border-radius: 0.5rem; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .form-group { margin-bottom: 1rem; }
+        .form-group.full-width { grid-column: 1 / -1; }
+        .form-group label { display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-main); }
+        .form-group input, .form-group select { width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem; background-color: transparent; color: var(--text-main); font-family: inherit;}
+        .modal-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; grid-column: 1 / -1; }
+        .hidden { display: none !important; }
+        .empty-state { grid-column: 1 / -1; text-align: center; padding: 3rem; color: var(--text-muted); border: 2px dashed var(--border-color); border-radius: 0.5rem; }
+
+        /* Receipt Styles */
+        .receipt-modal { background-color: #fdfbf7; color: #111; max-width: 400px; border-radius: 0; box-shadow: 0 10px 25px rgba(0,0,0,0.2); position: relative; }
+        .receipt-modal::before, .receipt-modal::after { content: ""; position: absolute; left: 0; right: 0; height: 10px; background-size: 20px 20px; }
+        .receipt-modal::before { top: -10px; background-image: radial-gradient(circle at 10px 0, transparent 10px, #fdfbf7 11px); }
+        .receipt-modal::after { bottom: -10px; background-image: radial-gradient(circle at 10px 20px, transparent 10px, #fdfbf7 11px); }
+        
+        .receipt-header { text-align: center; font-family: monospace; border-bottom: 2px dashed #ccc; padding-bottom: 1rem; margin-bottom: 1rem; }
+        .receipt-header h2 { font-size: 1.5rem; letter-spacing: 2px; margin-bottom: 0.25rem; }
+        .receipt-content { font-family: monospace; font-size: 0.9rem; line-height: 1.6; }
+        .receipt-row { display: flex; justify-content: space-between; margin-bottom: 0.25rem; }
+        .receipt-total { border-top: 2px dashed #ccc; margin-top: 1rem; padding-top: 1rem; font-size: 1.2rem; font-weight: bold; }
+        body.dark-mode .receipt-modal { background-color: #2a2a2a; color: #eee; }
+        body.dark-mode .receipt-modal::before { background-image: radial-gradient(circle at 10px 0, transparent 10px, #2a2a2a 11px); }
+        body.dark-mode .receipt-modal::after { background-image: radial-gradient(circle at 10px 20px, transparent 10px, #2a2a2a 11px); }
+
+        /* Print Layout */
+        #print-container { display: none; }
+        @media print {
+            body > * { display: none !important; }
+            #print-container { display: block !important; color: black; background: white; padding: 2rem; }
+            .print-car { margin-bottom: 2rem; border-bottom: 2px solid #ccc; padding-bottom: 1rem; }
+            .print-car h2 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+            .print-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+            .print-table th, .print-table td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; font-size: 12px; }
+            
+            .receipt-modal { box-shadow: none; }
+            .receipt-modal .modal-actions { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="brand" onclick="showGarageView()" title="Home / Back to Garage">
+            <i class="ph ph-wrench"></i> TurboLog
+        </div>
+        <div class="nav-actions">
+            <i class="ph ph-receipt" onclick="toggleReceiptModal(true)" title="Total Spendings Receipt"></i>
+            <i class="ph ph-printer" onclick="printReport()" title="Print Full Report"></i>
+            <i class="ph ph-moon" id="theme-toggle" onclick="toggleTheme()" title="Toggle Dark Mode"></i>
+        </div>
+    </nav>
+
+    <main>
+        <div id="view-garage">
+            <header class="page-header">
+                <div class="page-title">
+                    <h1>Garage</h1>
+                    <p>Manage your vehicles and their maintenance schedules.</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-secondary btn-icon-only" onclick="exportCSV()" title="Export All to CSV"><i class="ph ph-download-simple"></i></button>
+                    <button class="btn btn-secondary btn-icon-only" onclick="document.getElementById('csv-upload').click()" title="Import CSV"><i class="ph ph-upload-simple"></i></button>
+                    <input type="file" id="csv-upload" accept=".csv" class="hidden" onchange="importCSV(event)">
+                    <button class="btn btn-primary" onclick="toggleVehicleModal(true)"><i class="ph ph-plus"></i> Add Vehicle</button>
+                </div>
+            </header>
+            <div id="garage-grid" class="garage-grid"></div>
+        </div>
+
+        <div id="view-maintenance" class="hidden">
+            <header class="page-header">
+                <div class="page-title">
+                    <h1 id="maint-car-title">Maintenance Log</h1>
+                    <p id="maint-car-subtitle">Loading...</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-secondary btn-icon-only" onclick="exportCSV()" title="Export This Car to CSV"><i class="ph ph-download-simple"></i></button>
+                    <button class="btn btn-secondary" onclick="toggleMileageModal(true)"><i class="ph ph-speedometer"></i> Update Mileage</button>
+                    <button class="btn btn-primary" onclick="toggleLogModal(true)"><i class="ph ph-plus"></i> Log Service</button>
+                </div>
+            </header>
+            
+            <div style="display: flex; flex-direction: column; gap: 1.5rem; margin-bottom: 2rem;">
+                
+                <div style="background: var(--card-bg); border: 1px solid var(--border-color); padding: 1.5rem; border-radius: 0.5rem; width: 100%;">
+                    <h3 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="ph ph-wrench"></i> Maintenance Status
+                    </h3>
+                    <div id="maintenance-progress" class="progress-section"></div>
+                </div>
+
+                <div style="background: var(--card-bg); border: 1px solid var(--border-color); padding: 1.5rem; border-radius: 0.5rem; width: 100%;">
+                    <h3 style="margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="ph ph-archive-box"></i> Glovebox
+                    </h3>
+                    <textarea id="car-glovebox" class="glovebox-area" placeholder="Add specific oil weights, radio codes, tire sizes, or mechanic's number here..." onchange="saveGlovebox(this.value)"></textarea>
+                    <p style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">Notes auto-save when you click away.</p>
+                </div>
+
+            </div>
+
+            <h3 style="margin-bottom: 1rem;">Service History</h3>
+            <div id="maintenance-list" class="log-list" style="margin-top: 0;"></div>
+        </div>
+    </main>
+
+    <div id="print-container"></div>
+
+    <div id="mileageModal" class="modal-overlay hidden">
+        <div class="modal" style="max-width: 400px;">
+            <h2>Update Current Mileage</h2>
+            <form id="mileageForm">
+                <div class="form-group">
+                    <label>New Mileage (km)</label>
+                    <input type="number" id="updateMileageInput" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="toggleMileageModal(false)">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="receiptModal" class="modal-overlay hidden">
+        <div class="modal receipt-modal">
+            <div class="receipt-header">
+                <h2>TURBOLOG</h2>
+                <div>GARAGE EXPENSE REPORT</div>
+                <div id="receipt-date"></div>
+            </div>
+            <div id="receipt-content" class="receipt-content">
+                </div>
+            <div class="modal-actions" style="margin-top: 2rem; flex-direction: column; gap: 0.5rem;">
+                <button class="btn btn-primary" style="width: 100%; justify-content: center;" onclick="printReceipt()"><i class="ph ph-printer"></i> Print Receipt</button>
+                <button class="btn btn-secondary" style="width: 100%; justify-content: center;" onclick="toggleReceiptModal(false)">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="vehicleModal" class="modal-overlay hidden">
+        <div class="modal">
+            <h2>Add New Vehicle</h2>
+            <form id="vehicleForm" class="form-grid">
+                <div class="form-group"><label>Make</label><input type="text" id="carMake" required></div>
+                <div class="form-group"><label>Model</label><input type="text" id="carModel" required></div>
+                <div class="form-group"><label>Year</label><input type="number" id="carYear" required></div>
+                <div class="form-group"><label>Trim / Desc</label><input type="text" id="carTrim"></div>
+                <div class="form-group"><label>License Plate</label><input type="text" id="carPlate" required></div>
+                <div class="form-group"><label>VIN Number</label><input type="text" id="carVin" required></div>
+                <div class="form-group"><label>Engine</label><input type="text" id="carEngine" required></div>
+                <div class="form-group">
+                    <label>Fuel Type</label>
+                    <select id="carFuel" required>
+                        <option value="Petrol">Petrol</option>
+                        <option value="Diesel">Diesel</option>
+                        <option value="Electric">Electric</option>
+                        <option value="Hybrid">Hybrid</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Transmission</label>
+                    <select id="carTransmission" required>
+                        <option value="Automatic">Automatic</option>
+                        <option value="Manual">Manual</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>Current Mileage (km)</label><input type="number" id="carMileage" required></div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="toggleVehicleModal(false)">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Vehicle</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="logModal" class="modal-overlay hidden">
+        <div class="modal" style="max-width: 450px;">
+            <h2>Log Service</h2>
+            <form id="logForm" class="form-grid">
+                <div class="form-group full-width">
+                    <label>Service Item</label>
+                    <select id="logTitle" required></select>
+                </div>
+                <div class="form-group"><label>Date</label><input type="date" id="logDate" required></div>
+                <div class="form-group"><label>Mileage at Service (km)</label><input type="number" id="logMileage" required></div>
+                <div class="form-group full-width"><label>Cost ($)</label><input type="number" step="0.01" id="logCost" required></div>
+                
+                <div class="form-group full-width">
+                    <label>Service Notes (Optional)</label>
+                    <input type="text" id="logNotes" placeholder="e.g., Castrol Edge 5W-30, Shop XYZ">
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="toggleLogModal(false)">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Record</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // --- Single File PWA Setup ---
+        (function initPWA() {
+            // 1. Inject Manifest dynamically
+            const manifest = {
+                "name": "TurboLog",
+                "short_name": "TurboLog",
+                "start_url": window.location.href,
+                "display": "standalone",
+                "background_color": "#f7f7f9",
+                "theme_color": "#d97706",
+                "icons": [{
+                    // Basic SVG wrench icon encoded for the app icon
+                    "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256'><rect width='256' height='256' fill='none'/><path d='M226.83,57.17l-28-28a8,8,0,0,0-11.32,0l-24,24a8,8,0,0,0,0,11.32L176,77,74.34,178.63A40,40,0,1,0,77.37,181.66L179,80l12.51,12.51a8,8,0,0,0,11.32,0l24-24A8,8,0,0,0,226.83,57.17Z' fill='%23d97706'/></svg>",
+                    "sizes": "192x192",
+                    "type": "image/svg+xml"
+                }]
+            };
+            const manifestBlob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
+            const manifestUrl = URL.createObjectURL(manifestBlob);
+            document.head.insertAdjacentHTML('beforeend', `<link rel="manifest" href="${manifestUrl}">`);
+
+            // 2. Register basic Service Worker via Blob to enable "Install App" prompt
+            const swCode = `
+                self.addEventListener('install', (e) => e.waitUntil(self.skipWaiting()));
+                self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
+                self.addEventListener('fetch', (e) => {
+                    // Pass-through fetch (offline caching omitted for simplicity in single file)
+                });
+            `;
+            const swBlob = new Blob([swCode], {type: 'application/javascript'});
+            const swUrl = URL.createObjectURL(swBlob);
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register(swUrl).catch(console.error);
+            }
+        })();
+
+        // --- 1. The 20 Schedules ---
+        const DEFAULT_SCHEDULES = [
+            { id: 'oil', name: 'Engine oil & filter', intervalKm: 10000, intervalMonths: 12 },
+            { id: 'tyre_rot', name: 'Tyre rotation', intervalKm: 10000, intervalMonths: 12 },
+            { id: 'brake_fluid', name: 'Brake fluid', intervalKm: null, intervalMonths: 24 },
+            { id: 'air_filter', name: 'Air filter', intervalKm: 25000, intervalMonths: 24 },
+            { id: 'cabin_filter', name: 'Cabin air filter', intervalKm: 20000, intervalMonths: 12 },
+            { id: 'spark_plugs', name: 'Spark plugs', intervalKm: 40000, intervalMonths: 48 },
+            { id: 'coolant', name: 'Coolant flush', intervalKm: null, intervalMonths: 61 },
+            { id: 'trans_fluid', name: 'Transmission fluid', intervalKm: 60000, intervalMonths: 60 },
+            { id: 'brake_pads', name: 'Brake pads check', intervalKm: 20000, intervalMonths: 12 },
+            { id: 'tyre_rep', name: 'Tyre replacement', intervalKm: 50000, intervalMonths: 60 },
+            { id: 'battery', name: 'Battery check', intervalKm: null, intervalMonths: 24 },
+            { id: 'timing', name: 'Timing belt / chain', intervalKm: 100000, intervalMonths: 84 },
+            { id: 'wipers', name: 'Wiper blades', intervalKm: null, intervalMonths: 12 },
+            { id: 'ac_service', name: 'A/C service', intervalKm: null, intervalMonths: 24 },
+            { id: 'fuel_filter', name: 'Fuel filter', intervalKm: 40000, intervalMonths: 48 },
+            { id: 'diff_fluid', name: 'Differential fluid', intervalKm: 80000, intervalMonths: null },
+            { id: 'ps_fluid', name: 'Power steering fluid', intervalKm: null, intervalMonths: 61 },
+            { id: 'alignment', name: 'Wheel alignment', intervalKm: 20000, intervalMonths: null },
+            { id: 'suspension', name: 'Suspension / shocks check', intervalKm: 50000, intervalMonths: 36 },
+            { id: 'itp', name: 'General inspection (ITP)', intervalKm: null, intervalMonths: 12 }
+        ];
+
+        let vehicles = [];
+        let activeCarId = null;
+
+        // --- Init ---
+        function loadData() {
+            const saved = localStorage.getItem('turboLogData');
+            vehicles = saved ? JSON.parse(saved) : []; 
+            
+            if(localStorage.getItem('theme') === 'dark') toggleTheme(true);
+
+            const select = document.getElementById('logTitle');
+            DEFAULT_SCHEDULES.forEach(task => {
+                select.insertAdjacentHTML('beforeend', `<option value="${task.id}">${task.name}</option>`);
+            });
+
+            renderGarage();
+        }
+
+        function saveData() {
+            localStorage.setItem('turboLogData', JSON.stringify(vehicles));
+        }
+
+        function toggleTheme(forceDark = false) {
+            const body = document.body;
+            const icon = document.getElementById('theme-toggle');
+            
+            if (forceDark || !body.classList.contains('dark-mode')) {
+                body.classList.add('dark-mode');
+                icon.classList.replace('ph-moon', 'ph-sun');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                body.classList.remove('dark-mode');
+                icon.classList.replace('ph-sun', 'ph-moon');
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        // --- Views ---
+        function showGarageView() {
+            activeCarId = null;
+            document.getElementById('view-maintenance').classList.add('hidden');
+            document.getElementById('view-garage').classList.remove('hidden');
+            renderGarage();
+        }
+
+        function showMaintenanceView(carId) {
+            activeCarId = carId;
+            document.getElementById('view-garage').classList.add('hidden');
+            document.getElementById('view-maintenance').classList.remove('hidden');
+            
+            // Populate Glovebox
+            const car = vehicles.find(v => v.id === carId);
+            document.getElementById('car-glovebox').value = car.glovebox || '';
+
+            renderMaintenanceLogs();
+        }
+
+        // --- Toggle VIN Visiblity ---
+        function toggleVin(id) {
+            const vinSpan = document.getElementById(`vin-${id}`);
+            const icon = vinSpan.nextElementSibling;
+            const fullVin = vinSpan.getAttribute('data-fullvin');
+            
+            if (vinSpan.innerText.includes('•')) {
+                vinSpan.innerText = fullVin;
+                icon.classList.replace('ph-eye', 'ph-eye-closed');
+            } else {
+                vinSpan.innerText = '•••••••••••••••••';
+                icon.classList.replace('ph-eye-closed', 'ph-eye');
+            }
+        }
+
+        // --- Glovebox Saving ---
+        function saveGlovebox(content) {
+            const car = vehicles.find(v => v.id === activeCarId);
+            if(car) {
+                car.glovebox = content;
+                saveData();
+            }
+        }
+
+        // --- Render ---
+        function renderGarage() {
+            const grid = document.getElementById('garage-grid');
+            grid.innerHTML = '';
+
+            if (vehicles.length === 0) {
+                grid.innerHTML = `<div class="empty-state">No vehicles in your garage. Click "Add Vehicle" to get started!</div>`;
+                return;
+            }
+
+            vehicles.forEach(car => {
+                // Calculate Badges (Overdue / Due Soon)
+                let overdueCount = 0;
+                let soonCount = 0;
+
+                DEFAULT_SCHEDULES.forEach(task => {
+                    const lastService = car.logs.filter(l => l.taskId === task.id).sort((a,b) => new Date(b.date) - new Date(a.date))[0];
+                    if (lastService) {
+                        let percKm = 0, percMo = 0;
+                        if(task.intervalKm) percKm = ((parseInt(car.mileage) - parseInt(lastService.mileage)) / task.intervalKm) * 100;
+                        if(task.intervalMonths) {
+                            let sd = new Date(lastService.date), today = new Date();
+                            percMo = (((today.getFullYear() - sd.getFullYear()) * 12 + (today.getMonth() - sd.getMonth())) / task.intervalMonths) * 100;
+                        }
+                        let maxPerc = Math.max(percKm, percMo);
+                        
+                        if (maxPerc >= 100) overdueCount++;
+                        else if (maxPerc >= 85) soonCount++;
+                    }
+                });
+
+                let badgeHtml = `<div class="badge-ok"><i class="ph ph-check-circle"></i> Good Status</div>`;
+                if (overdueCount > 0) {
+                    badgeHtml = `<div class="badge-overdue"><i class="ph ph-warning"></i> ${overdueCount} Overdue</div>`;
+                } else if (soonCount > 0) {
+                    badgeHtml = `<div class="badge-warning"><i class="ph ph-clock"></i> ${soonCount} Due Soon</div>`;
+                }
+
+                grid.insertAdjacentHTML('beforeend', `
+                    <article class="vehicle-card">
+                        <div>
+                            <div class="card-header">
+                                <h2>${car.model}</h2>
+                                ${badgeHtml}
+                            </div>
+                            <div class="vehicle-desc">${car.year} ${car.make} ${car.trim}</div>
+                            
+                            <div class="vehicle-specs">
+                                <span class="spec-pill">${car.plate}</span>
+                                <div class="vin-display">
+                                    <span id="vin-${car.id}" data-fullvin="${car.vin}">•••••••••••••••••</span>
+                                    <i class="ph ph-eye" onclick="toggleVin('${car.id}')" title="Toggle VIN"></i>
+                                </div>
+                            </div>
+
+                        </div>
+                        <div class="stats-row">
+                            <div class="stat-block">
+                                <div class="stat-label">Mileage</div>
+                                <div class="stat-value">${parseInt(car.mileage).toLocaleString()} km</div>
+                            </div>
+                        </div>
+                        <div class="card-actions">
+                            <button class="btn btn-secondary" onclick="showMaintenanceView('${car.id}')">Manage</button>
+                            <button class="btn btn-danger btn-icon-only" onclick="deleteVehicle('${car.id}')" title="Delete Vehicle"><i class="ph ph-trash"></i></button>
+                        </div>
+                    </article>
+                `);
+            });
+        }
+
+        function renderMaintenanceLogs() {
+            const car = vehicles.find(v => v.id === activeCarId);
+            if (!car) return;
+
+            document.getElementById('maint-car-title').innerText = `${car.make} ${car.model}`;
+            document.getElementById('maint-car-subtitle').innerText = `${car.year} | ${car.plate} | ${parseInt(car.mileage).toLocaleString()} km`;
+
+            // Render Splitted Progress Bars
+            const progressContainer = document.getElementById('maintenance-progress');
+            progressContainer.innerHTML = '';
+            
+            DEFAULT_SCHEDULES.forEach(task => {
+                const lastService = car.logs
+                    .filter(l => l.taskId === task.id)
+                    .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+
+                let barsHTML = '';
+
+                if (!lastService) {
+                    barsHTML = `<div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">Not logged yet.</div>`;
+                } else {
+                    if (task.intervalKm) {
+                        let kmSince = parseInt(car.mileage) - parseInt(lastService.mileage);
+                        let percKm = Math.min((kmSince / task.intervalKm) * 100, 100);
+                        let colorClass = percKm >= 100 ? 'danger' : (percKm >= 85 ? 'warning' : '');
+                        
+                        barsHTML += `
+                            <div class="progress-meta-row">
+                                <span>Distance</span>
+                                <span>${kmSince.toLocaleString()} / ${task.intervalKm.toLocaleString()} km</span>
+                            </div>
+                            <div class="progress-track"><div class="progress-fill ${colorClass}" style="width: ${percKm}%"></div></div>
+                        `;
+                    }
+                    
+                    if (task.intervalMonths) {
+                        let sd = new Date(lastService.date);
+                        let today = new Date();
+                        let monthsSince = (today.getFullYear() - sd.getFullYear()) * 12 + (today.getMonth() - sd.getMonth());
+                        let percMo = Math.min((monthsSince / task.intervalMonths) * 100, 100);
+                        let colorClass = percMo >= 100 ? 'danger' : (percMo >= 85 ? 'warning' : '');
+
+                        barsHTML += `
+                            <div class="progress-meta-row">
+                                <span>Time</span>
+                                <span>${monthsSince} / ${task.intervalMonths} mo</span>
+                            </div>
+                            <div class="progress-track"><div class="progress-fill ${colorClass}" style="width: ${percMo}%"></div></div>
+                        `;
+                    }
+                }
+
+                progressContainer.insertAdjacentHTML('beforeend', `
+                    <div class="progress-item">
+                        <div class="progress-header">
+                            <span>${task.name}</span>
+                            <button class="btn-inline-log" onclick="openLogModalForTask('${task.id}')">Log</button>
+                        </div>
+                        ${barsHTML}
+                    </div>
+                `);
+            });
+
+            const list = document.getElementById('maintenance-list');
+            list.innerHTML = '';
+            
+            if (car.logs.length === 0) {
+                list.innerHTML = `<div class="empty-state">No services logged yet. Click "Log" on an item above!</div>`;
+                return;
+            }
+
+            car.logs.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(log => {
+                const taskName = DEFAULT_SCHEDULES.find(t => t.id === log.taskId)?.name || log.taskId;
+                
+                const notesHTML = log.notes ? `
+                    <div class="log-notes">
+                        <i class="ph ph-note"></i> 
+                        <span>${log.notes}</span>
+                    </div>
+                ` : '';
+
+                list.insertAdjacentHTML('beforeend', `
+                    <div class="log-item">
+                        <div style="flex: 1;">
+                            <h3>${taskName}</h3>
+                            <div class="log-meta">
+                                <span><i class="ph ph-calendar-blank"></i> ${log.date}</span>
+                                <span><i class="ph ph-speedometer"></i> ${parseInt(log.mileage).toLocaleString()} km</span>
+                            </div>
+                            ${notesHTML}
+                        </div>
+                        <div class="log-cost">$${parseFloat(log.cost).toFixed(2)}</div>
+                    </div>
+                `);
+            });
+        }
+
+        // --- Actions ---
+        function deleteVehicle(id) {
+            if(confirm("Are you sure you want to delete this vehicle and all its history?")) {
+                vehicles = vehicles.filter(v => v.id !== id);
+                saveData();
+                renderGarage();
+            }
+        }
+
+        function printReport() {
+            const container = document.getElementById('print-container');
+            let html = `<h1>TurboLog Fleet Report</h1><p>Generated on ${new Date().toLocaleDateString()}</p>`;
+            
+            const carsToPrint = activeCarId ? vehicles.filter(v => v.id === activeCarId) : vehicles;
+
+            carsToPrint.forEach(car => {
+                html += `
+                <div class="print-car">
+                    <h2>${car.year} ${car.make} ${car.model}</h2>
+                    <p>Plate: ${car.plate} | VIN: ${car.vin} | Mileage: ${parseInt(car.mileage).toLocaleString()} km</p>
+                    <table class="print-table">
+                        <thead><tr><th>Date</th><th>Service</th><th>Mileage</th><th>Cost</th><th>Notes</th></tr></thead>
+                        <tbody>
+                `;
+                car.logs.forEach(log => {
+                    const taskName = DEFAULT_SCHEDULES.find(t => t.id === log.taskId)?.name || log.taskId;
+                    html += `<tr><td>${log.date}</td><td>${taskName}</td><td>${parseInt(log.mileage).toLocaleString()} km</td><td>$${log.cost}</td><td>${log.notes || ''}</td></tr>`;
+                });
+                html += `</tbody></table></div>`;
+            });
+
+            container.innerHTML = html;
+            window.print();
+        }
+
+        function printReceipt() {
+            const container = document.getElementById('print-container');
+            const receiptNode = document.querySelector('.receipt-modal').cloneNode(true);
+            container.innerHTML = '';
+            container.appendChild(receiptNode);
+            window.print();
+        }
+
+        function exportCSV() {
+            let csvContent = "data:text/csv;charset=utf-8,Make,Model,Year,Plate,VIN,CurrentMileage,Task,Date,TaskMileage,Cost,Notes\n";
+            const targetCars = activeCarId ? vehicles.filter(v => v.id === activeCarId) : vehicles;
+            
+            targetCars.forEach(car => {
+                if(car.logs.length === 0) {
+                    csvContent += `${car.make},${car.model},${car.year},${car.plate},${car.vin},${car.mileage},,,,,, \n`;
+                } else {
+                    car.logs.forEach(log => {
+                        const taskName = DEFAULT_SCHEDULES.find(t => t.id === log.taskId)?.name || log.taskId;
+                        // Escape commas in notes for CSV
+                        const safeNotes = log.notes ? `"${log.notes.replace(/"/g, '""')}"` : "";
+                        csvContent += `${car.make},${car.model},${car.year},${car.plate},${car.vin},${car.mileage},${taskName},${log.date},${log.mileage},${log.cost},${safeNotes}\n`;
+                    });
+                }
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `turbolog_${activeCarId ? 'car' : 'garage'}_export.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // --- CSV UPLOAD LOGIC ---
+        function importCSV(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const lines = text.split('\n');
+                
+                if(lines.length < 2) return;
+
+                let importedCount = 0;
+
+                for(let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if(!line) continue;
+
+                    // Simple split
+                    const parts = line.split(',');
+                    if(parts.length < 6) continue;
+
+                    const [make, model, year, plate, vin, currentMileage, taskName, date, taskMileage, cost, ...notesArr] = parts;
+                    const notes = notesArr.join(',').replace(/^"|"$/g, ''); 
+
+                    let car = vehicles.find(v => (v.vin === vin && vin !== "") || (v.plate === plate && plate !== ""));
+
+                    if(!car) {
+                        car = {
+                            id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+                            make: make || 'Unknown',
+                            model: model || 'Unknown',
+                            year: year || new Date().getFullYear(),
+                            trim: '', 
+                            plate: plate || '',
+                            vin: vin || '',
+                            engine: '', 
+                            fuel: 'Petrol', 
+                            transmission: 'Automatic', 
+                            mileage: currentMileage || '0',
+                            glovebox: '',
+                            logs: []
+                        };
+                        vehicles.push(car);
+                    } else {
+                        if(parseInt(currentMileage) > parseInt(car.mileage)) {
+                            car.mileage = currentMileage;
+                        }
+                    }
+
+                    if(taskName && date) {
+                        const taskDef = DEFAULT_SCHEDULES.find(t => t.name === taskName);
+                        const taskId = taskDef ? taskDef.id : taskName;
+
+                        const exists = car.logs.find(l => l.taskId === taskId && l.date === date && l.mileage === taskMileage);
+                        if(!exists) {
+                            car.logs.push({
+                                id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+                                taskId: taskId,
+                                date: date,
+                                mileage: taskMileage || car.mileage,
+                                cost: cost || "0",
+                                notes: notes || ""
+                            });
+                            importedCount++;
+                        }
+                    }
+                }
+
+                saveData();
+                activeCarId ? renderMaintenanceLogs() : renderGarage();
+                alert(`CSV imported! Added/Updated data from ${importedCount} logs.`);
+                event.target.value = ''; 
+            };
+            reader.readAsText(file);
+        }
+
+        // --- Modals ---
+        function toggleReceiptModal(show) {
+            const modal = document.getElementById('receiptModal');
+            if(show) {
+                document.getElementById('receipt-date').innerText = new Date().toLocaleDateString();
+                const content = document.getElementById('receipt-content');
+                content.innerHTML = '';
+
+                let grandTotal = 0;
+                
+                if (vehicles.length === 0) {
+                    content.innerHTML = `<div style="text-align:center; padding: 1rem 0;">No vehicles found.</div>`;
+                } else {
+                    vehicles.forEach(car => {
+                        const carTotal = car.logs.reduce((sum, log) => sum + parseFloat(log.cost || 0), 0);
+                        grandTotal += carTotal;
+                        content.insertAdjacentHTML('beforeend', `
+                            <div class="receipt-row">
+                                <span>${car.make} ${car.model}</span>
+                                <span>$${carTotal.toFixed(2)}</span>
+                            </div>
+                        `);
+                    });
+                }
+
+                content.insertAdjacentHTML('beforeend', `
+                    <div class="receipt-row receipt-total">
+                        <span>TOTAL SPENT</span>
+                        <span>$${grandTotal.toFixed(2)}</span>
+                    </div>
+                `);
+
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        function toggleMileageModal(show) {
+            const modal = document.getElementById('mileageModal');
+            if(show) {
+                const car = vehicles.find(v => v.id === activeCarId);
+                if(car) document.getElementById('updateMileageInput').value = car.mileage;
+            }
+            show ? modal.classList.remove('hidden') : modal.classList.add('hidden');
+        }
+
+        document.getElementById('mileageForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const car = vehicles.find(v => v.id === activeCarId);
+            const newMileage = document.getElementById('updateMileageInput').value;
+            
+            if(car && newMileage) {
+                car.mileage = newMileage;
+                saveData();
+                renderMaintenanceLogs();
+            }
+            toggleMileageModal(false);
+        });
+
+        function toggleVehicleModal(show) {
+            const modal = document.getElementById('vehicleModal');
+            show ? modal.classList.remove('hidden') : modal.classList.add('hidden');
+            if(!show) document.getElementById('vehicleForm').reset();
+        }
+
+        document.getElementById('vehicleForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            vehicles.push({
+                id: Date.now().toString(),
+                make: document.getElementById('carMake').value,
+                model: document.getElementById('carModel').value,
+                year: document.getElementById('carYear').value,
+                trim: document.getElementById('carTrim').value,
+                plate: document.getElementById('carPlate').value,
+                vin: document.getElementById('carVin').value,
+                engine: document.getElementById('carEngine').value,
+                fuel: document.getElementById('carFuel').value,
+                transmission: document.getElementById('carTransmission').value,
+                mileage: document.getElementById('carMileage').value,
+                glovebox: '',
+                logs: []
+            });
+            saveData();
+            renderGarage();
+            toggleVehicleModal(false);
+        });
+
+        function openLogModalForTask(taskId) {
+            toggleLogModal(true);
+            document.getElementById('logTitle').value = taskId;
+        }
+
+        function toggleLogModal(show) {
+            const modal = document.getElementById('logModal');
+            if (show) {
+                document.getElementById('logDate').valueAsDate = new Date();
+                const car = vehicles.find(v => v.id === activeCarId);
+                if(car) document.getElementById('logMileage').value = car.mileage;
+            }
+            
+            show ? modal.classList.remove('hidden') : modal.classList.add('hidden');
+            if(!show) document.getElementById('logForm').reset();
+        }
+
+        document.getElementById('logForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const car = vehicles.find(v => v.id === activeCarId);
+            const logMileage = document.getElementById('logMileage').value;
+            const logNotes = document.getElementById('logNotes').value;
+            
+            car.logs.push({
+                id: Date.now().toString(),
+                taskId: document.getElementById('logTitle').value,
+                date: document.getElementById('logDate').value,
+                mileage: logMileage,
+                cost: document.getElementById('logCost').value,
+                notes: logNotes // Saving the notes
+            });
+
+            if(parseInt(logMileage) > parseInt(car.mileage)) {
+                car.mileage = logMileage; 
+            }
+
+            saveData();
+            renderMaintenanceLogs();
+            toggleLogModal(false);
+        });
+
+        loadData();
+    </script>
+</body>
+</html>
